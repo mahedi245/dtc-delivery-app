@@ -1,0 +1,144 @@
+<!-- ১. মোবাইল ভিউ: কার্ড লেআউট -->
+                            <div class="d-block d-md-none">
+                                {% macro render_order_card(order) %}
+                                {% set items_msg = "" %}
+                                {% if order['door_wood'] or order['door_size'] or order['door_qty'] %}
+                                    {% set items_msg = items_msg ~ "\n🚪 ডোর: " ~ (order['door_wood'] or '') ~ "\n   মাপ: " ~ (order['door_size'] or '') ~ " (" ~ (order['door_qty'] or '') ~ ")" %}
+                                {% endif %}
+                                {% if order['frame_wood'] or order['frame_size'] or order['frame_qty'] %}
+                                    {% set items_msg = items_msg ~ "\n🖼️ চৌকাঠ: " ~ (order['frame_wood'] or '') ~ "\n   মাপ: " ~ (order['frame_size'] or '') ~ " (" ~ (order['frame_qty'] or '') ~ ")" %}
+                                {% endif %}
+                                {% if order['other_items'] %}
+                                    {% set items_msg = items_msg ~ "\n🪑 অন্যান্য: " ~ order['other_items'] %}
+                                {% endif %}
+                                {% if not items_msg %}
+                                    {% set items_msg = "\n🔹 পণ্য: " ~ (order['product_name'] or 'পণ্য') ~ " - " ~ (order['wood_type'] or '') ~ " (" ~ (order['size'] or '') ~ ") - " ~ (order['quantity'] or '') %}
+                                {% endif %}
+                                {% set msg = "আসসালামু আলাইকুম " ~ order['name'] ~ " সাহেব,\nঢাকা টিম্বার কমপ্লেক্স (Dhaka Timber Complex)-এ আপনাকে স্বাগতম।\n\n📦 আপনার অর্ডারের বিবরণ:\n🔹 অর্ডার নং: #" ~ order['order_no'] ~ items_msg ~ "\n\n🔹 বর্তমান স্ট্যাটাস: " ~ order['status'] ~ "\n\nযেকোনো প্রয়োজনে আমাদের সাথে যোগাযোগ করুন।\nধন্যবাদান্তে,\nঢাকা টিম্বার কমপ্লেক্স" %}
+
+                                {% set text_color = "text-danger" if order['status'] == 'Delivered' else ("text-warning" if order['category'] == 'ভিজিট' else "text-success") %}
+                                <div class="mobile-order-card bg-white">
+                                    <div class="d-flex justify-content-between align-items-center p-2 bg-light border-bottom">
+                                        <div>
+                                            <span class="badge bg-dark fw-bold">#{{ order['order_no'] }}</span>
+                                            <span class="badge {% if order['category'] == 'ডেলিভারি' %}bg-info text-dark{% else %}bg-secondary{% endif %}">
+                                                {{ order['category'] }}
+                                            </span>
+                                            <span class="badge {% if order['status'] == 'Ready' %}bg-primary{% elif order['status'] == 'Delivered' %}bg-danger{% elif order['status'] == 'Pending' %}bg-secondary{% elif order['status'] == 'Stop' %}bg-dark{% else %}bg-secondary{% endif %}">
+                                                {{ order['status'] }}
+                                            </span>
+                                        </div>
+                                        <div class="small text-muted" style="font-size:0.78rem;">
+                                            <i class="bi bi-calendar3"></i> {{ order['date'] }}
+                                        </div>
+                                    </div>
+
+                                    <div class="p-3">
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <div class="fw-bold fs-6 {{ text_color }}">{{ order['name'] }}</div>
+                                            {% if order['phone'] %}
+                                            <a href="tel:{{ order['phone'] }}" class="btn btn-outline-secondary btn-sm py-0 px-2 text-decoration-none" style="font-size:0.75rem;">
+                                                <i class="bi bi-telephone-fill text-success"></i> কল করুন
+                                            </a>
+                                            {% endif %}
+                                        </div>
+
+                                        <div class="small text-muted mb-2">
+                                            {% if order['phone'] %}<div><i class="bi bi-phone"></i> {{ order['phone'] }}</div>{% endif %}
+                                            {% if order['address'] %}<div><i class="bi bi-geo-alt"></i> {{ order['address'] }}</div>{% endif %}
+                                        </div>
+
+                                        {% set door_groups = unpack_items(order['door_size'], order['door_qty'], order['door_wood']) | group_by_wood %}
+                                        {% set frame_groups = unpack_items(order['frame_size'], order['frame_qty'], order['frame_wood']) | group_by_wood %}
+
+                                        <!-- ডোর বিবরণ -->
+                                        {% if door_groups %}
+                                        <div class="p-2 mb-2 rounded bg-light border border-primary border-opacity-25">
+                                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                                <span class="badge bg-primary">🚪 ডোর</span>
+                                                {% if order['door_qty'] %}<span class="badge bg-dark">{{ order['door_qty'] }}</span>{% endif %}
+                                            </div>
+                                            {% for group in door_groups %}
+                                            <div class="small text-dark mt-1">
+                                                <strong>{{ group['wood'] }}:</strong>
+                                                {% for i in group['items'] %}
+                                                    {{ i['size'] }}{% if i['qty'] %} ({{ i['qty'] }}){% endif %}{% if not loop.last %}, {% endif %}
+                                                {% endfor %}
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                        {% endif %}
+
+                                        <!-- চৌকাঠ বিবরণ -->
+                                        {% if frame_groups %}
+                                        <div class="p-2 mb-2 rounded bg-light border border-success border-opacity-25">
+                                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                                <span class="badge bg-success">🖼️ চৌকাঠ</span>
+                                                {% if order['frame_qty'] %}<span class="badge bg-dark">{{ order['frame_qty'] }}</span>{% endif %}
+                                            </div>
+                                            {% for group in frame_groups %}
+                                            <div class="small text-dark mt-1">
+                                                <strong>{{ group['wood'] }}:</strong>
+                                                {% for i in group['items'] %}
+                                                    {{ i['size'] }}{% if i['qty'] %} ({{ i['qty'] }}){% endif %}{% if not loop.last %}, {% endif %}
+                                                {% endfor %}
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                        {% endif %}
+
+                                        <!-- অন্যান্য আইটেম -->
+                                        {% if order['other_items'] %}
+                                        <div class="small text-secondary mb-1">
+                                            <span class="badge bg-info text-dark">🪑 অন্যান্য</span> {{ order['other_items'] }}
+                                        </div>
+                                        {% endif %}
+
+                                        <!-- নোট -->
+                                        {% if order['note'] %}
+                                        <div class="small text-muted fst-italic mt-1"><i class="bi bi-info-circle"></i> {{ order['note'] }}</div>
+                                        {% endif %}
+                                    </div>
+
+                                    <!-- অ্যাকশন বাটনসমূহ -->
+                                    <div class="p-2 bg-light border-top d-flex justify-content-between align-items-center">
+                                        <div class="d-flex gap-1">
+                                            {% if order['phone'] %}
+                                            <a href="https://wa.me/{{ order['phone'] | clean_phone }}?text={{ msg | url_encode }}" target="_blank" class="btn btn-sm btn-success py-1 px-2 d-flex align-items-center gap-1" style="font-size: 0.78rem;">
+                                                <i class="bi bi-whatsapp"></i> WhatsApp
+                                            </a>
+                                            <a href="sms:{{ order['phone'] }}?body={{ msg | url_encode }}" class="btn btn-sm btn-outline-primary py-1 px-2 d-flex align-items-center gap-1" style="font-size: 0.78rem;">
+                                                <i class="bi bi-chat-dots"></i> SMS
+                                            </a>
+                                            {% endif %}
+                                        </div>
+                                        <div class="d-flex gap-1">
+                                            <a href="/edit/{{ order['id'] }}" class="btn btn-sm btn-primary py-1 px-2" title="এডিট">
+                                                <i class="bi bi-pencil"></i> এডিট
+                                            </a>
+                                            <a href="/delete/{{ order['id'] }}" class="btn btn-sm btn-danger py-1 px-2" onclick="return confirm('আপনি কি নিশ্চিত যে এটি ডিলেট করতে চান?')" title="ডিলিট">
+                                                <i class="bi bi-trash"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endmacro %}
+
+                                <div class="mb-4">
+                                    <h6 class="fw-bold mb-3 text-primary border-bottom border-primary pb-2"><i class="bi bi-activity"></i> চলমান কাজ (ভিজিট ও ডেলিভারি)</h6>
+                                    {% for order in orders if order['status'] != 'Delivered' %}
+                                        {{ render_order_card(order) }}
+                                    {% else %}
+                                        <div class="text-center text-muted p-4 bg-white shadow-sm rounded-3 mb-3 border">কোনো চলমান কাজ নেই</div>
+                                    {% endfor %}
+                                </div>
+
+                                <div class="mt-2 mb-4">
+                                    <h6 class="fw-bold mb-3 text-danger border-bottom border-danger pb-2"><i class="bi bi-check2-all"></i> ডেলিভারি সম্পন্ন কাজ</h6>
+                                    {% for order in orders if order['status'] == 'Delivered' %}
+                                        {{ render_order_card(order) }}
+                                    {% else %}
+                                        <div class="text-center text-muted p-4 bg-white shadow-sm rounded-3 mb-3 border">কোনো ডেলিভারি সম্পন্ন কাজ নেই</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
